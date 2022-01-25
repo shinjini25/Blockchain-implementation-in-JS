@@ -129,7 +129,7 @@ app.post('/receive-new-block', (req, res) => {
     const correctHash= lastblockHash === newblock.previousBlockHash 
     if(correctHash){
         bitcoin.chain.push(newblock);
-        bitoin.newTransactions=[];
+        bitcoin.newTransactions=[];
         res.json({ 
             note: "New block succesfully added to the chain!",
             newBlock: newblock
@@ -212,8 +212,6 @@ app.post('/register-and-broadcast-node', function(req, res){
 });
 app.get('/consensus', (req, res) => {
     const requestPromises = [];
-    let ab=0;
-console.log('networknodes', bitcoin.networkNodes);
     bitcoin.networkNodes.forEach(networkNodeUrl => {
         const requestOptions = {
             uri: networkNodeUrl + '/blockchain',
@@ -222,11 +220,11 @@ console.log('networknodes', bitcoin.networkNodes);
         };
         requestPromises.push(rp(requestOptions));
     });
-    console.log(ab);
 
     async function consensusPromises() {
         try{
-            const blockchains = await requestPromises;
+            
+            const blockchains = await Promise.all(requestPromises);
             const currentChainLength = bitcoin.chain.length;
             let maxChainLength = currentChainLength;
             let newLongestChain = null;
@@ -239,16 +237,18 @@ console.log('networknodes', bitcoin.networkNodes);
                     newPendingTransactions = blockchain.newTransactions;
                 };
             });
-            console.log("inside");
-            console.log("longest chain", newLongestChain);
-            console.log(bitcoin.chainIsValid(newLongestChain));
+            if (newLongestChain ==  null) {
+
+            }
+            // if new longest chain wasn't found or found but it not valid
             if (!newLongestChain || (newLongestChain && !bitcoin.chainIsValid(newLongestChain))) {
                 res.json({
                     note: 'Current chain has not been replaced.',
                     chain: bitcoin.chain
                 });
             }
-            else {
+            //was found and is valid
+            else if ((newLongestChain && bitcoin.chainIsValid(newLongestChain))) {
                 bitcoin.chain = newLongestChain;
                 bitcoin.newTransactions = newPendingTransactions;
                 res.json({
@@ -257,7 +257,8 @@ console.log('networknodes', bitcoin.networkNodes);
                 });
             }
         } catch(e) {
-            console.log("error", e);
+            console.log("Error", e);
+            res.json({note: e});
         }
     }
 
