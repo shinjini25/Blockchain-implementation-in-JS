@@ -262,38 +262,10 @@ app.get('/consensus', (req, res) => {
         }
     }
 
-    // Promise.all(requestPromises)
-    //     .then(blockchains => {
-    //         const currentChainLength = bitcoin.chain.length;
-    //         let maxChainLength = currentChainLength;
-    //         let newLongestChain = null;
-    //         let newPendingTransactions = null;
+   LongestChain = null;
 
-    //         blockchains.forEach(blockchain => {
-    //             if (blockchain.chain.length > maxChainLength) {
-    //                 maxChainLength = blockchain.chain.length;
-    //                 newLongestChain = blockchain.chain;
-    //                 newPendingTransactions = blockchain.newTransactions;
-    //             };
-    //         });
-    //         console.log("inside");
-    //         console.log(bitcoin.chainIsValid(newLongestChain)) ;
-    //         if (!newLongestChain || (newLongestChain && !bitcoin.chainIsValid(newLongestChain))) {
-    //             res.json({
-    //                 note: 'Current chain has not been replaced.',
-    //                 chain: bitcoin.chain
-    //             });
-    //         }
-    //         else {
-    //             bitcoin.chain = newLongestChain;
-    //             bitcoin.newTransactions = newPendingTransactions;
-    //             res.json({
-    //                 note: 'This chain has been replaced.',
-    //                 chain: bitcoin.chain
-    //             });
-    //         }
     consensusPromises();
-    //     });
+
 });
 
 app.post('/register-node', (req, res)=>{
@@ -322,6 +294,38 @@ app.post('/register-nodes-bulk', (req, res) => {
 
     res.json({ note: "All network nodes have been successfully registered to the new node!"});
 
+});
+
+
+// get block by blockHash
+app.get('/block/:blockHash', function (req, res) {
+    const blockHash = req.params.blockHash;
+    const correctBlock = bitcoin.getBlock(blockHash);
+    res.json({
+        block: correctBlock
+    });
+});
+
+// get address by address
+app.get('/address/:address', function (req, res) {
+    const address = req.params.address;
+    const addressData = bitcoin.getAddressData(address);
+    res.json({
+        addressData: addressData
+    });
+});
+// get transaction by transactionId
+app.get('/transaction/:transactionId', function (req, res) {
+    const transactionId = req.params.transactionId;
+    const trasactionData = bitcoin.getTransaction(transactionId);
+    res.json({
+        transaction: trasactionData.transaction,
+        block: trasactionData.block
+    });
+});
+
+app.get('/block-explorer', function(req, res) {
+    res.sendFile('./block-explorer/index.html' , { root: __dirname });
 });
 
 app.listen(port, function() {
